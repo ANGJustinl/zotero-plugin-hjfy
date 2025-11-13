@@ -1,24 +1,24 @@
 {
-  "name": "zotero-plugin-template",
+  "name": "zotero-plugin-hjfy",
   "type": "module",
-  "version": "3.1.0",
-  "description": "Zotero Plugin Template",
+  "version": "0.0.1",
+  "description": "Zotero plugin for translating arXiv articles based on LaTeX source code using hjfy.top Translation",
   "config": {
-    "addonName": "Zotero Plugin Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate"
+    "addonName": "幻觉翻译 arXiv 翻译",
+    "addonID": "hjfy-arxiv@translator.com",
+    "addonRef": "hjfyarxiv",
+    "addonInstance": "HjfyArxiv",
+    "prefsPrefix": "extensions.zotero.hjfyarxiv"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-plugin-template.git"
+    "url": "git+https://github.com/angjustinl/zotero-plugin-hjfy.git"
   },
-  "author": "windingwind",
+  "author": "Your Name",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-plugin-template/issues"
+    "url": "https://github.com/angjustinl/zotero-plugin-hjfy/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-plugin-template#readme",
+  "homepage": "https://github.com/angjustinl/zotero-plugin-hjfy#readme",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": "zotero-plugin serve",

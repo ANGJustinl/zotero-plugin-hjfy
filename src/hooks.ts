@@ -5,6 +5,7 @@ import {
   PromptExampleFactory,
   UIExampleFactory,
 } from "./modules/examples";
+import { ArxivTranslationFactory } from "./modules/arxivTranslation";
 import { getString, initLocale } from "./utils/locale";
 import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
@@ -71,6 +72,9 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
   UIExampleFactory.registerStyleSheet(win);
 
   UIExampleFactory.registerRightClickMenuItem();
+
+  // 注册 arXiv 翻译右键菜单
+  ArxivTranslationFactory.registerRightClickMenuItem();
 
   UIExampleFactory.registerRightClickMenuPopup(win);
 
