@@ -10,10 +10,18 @@ export class ArxivTranslationFactory {
       tag: "menuitem",
       id: "zotero-itemmenu-hjfy-arxiv-translate",
       label: getString("menuitem-label"),
-      commandListener: (ev) => {
+      commandListener: () => {
         const items = ztoolkit.getGlobal("ZoteroPane").getSelectedItems();
         if (items.length > 0) {
           this.translateSelectedItems(items);
+        } else {
+          new ztoolkit.ProgressWindow(getString("menuitem-label"))
+            .createLine({
+              text: "未选择任何条目",
+              type: "warning",
+            })
+            .show()
+            .startCloseTimer(3000);
         }
       },
       icon: menuIcon,
@@ -62,30 +70,39 @@ export class ArxivTranslationFactory {
   /**
    * 翻译单个条目
    */
-  static async translateSingleItem(item: Zotero.Item, progressLine: any) {
+  static async translateSingleItem(item: Zotero.Item, _progressLine: any) {
     // 1. 读取 DOI
-    ztoolkit.log("📖 读取 DOI...");
+    ztoolkit.log("正在读取 DOI...");
     const doi = this.extractDOI(item);
     if (!doi) {
       throw new Error("未找到有效的 DOI");
     }
 
     // 2. 提取 arXiv ID
-    ztoolkit.log("🔍 解析 arXiv ID...");
+    ztoolkit.log("正在解析 arXiv ID...");
     const arxivId = this.extractArxivId(doi);
     if (!arxivId) {
       throw new Error("无法从 DOI 中提取 arXiv ID");
     }
 
-    // 3. 下载翻译后的 PDF
-    ztoolkit.log("⬇️ 下载翻译 PDF...");
-    const pdfBuffer = await this.downloadTranslatedPdf(arxivId);
+    // 3. 获取文件信息并下载翻译后的 PDF
+    ztoolkit.log("正在获取文件信息...");
+    const fileInfo = await this.fetchArxivFileInfo(arxivId);
+
+    // 优先使用中文翻译 PDF
+    const downloadUrl = fileInfo.zhCN || fileInfo.origin;
+    if (!downloadUrl) {
+      throw new Error("未找到可用的下载链接");
+    }
+
+    ztoolkit.log("正在下载 PDF...");
+    const pdfBuffer = await this.downloadPdf(downloadUrl);
 
     // 4. 保存 PDF 并添加附件
-    ztoolkit.log("📎 添加附件...");
+    ztoolkit.log("正在添加附件...");
     const attachment = await this.savePdfAsAttachment(item, pdfBuffer, arxivId);
 
-    ztoolkit.log("✅ 完成!");
+    ztoolkit.log("翻译完成!");
     return attachment;
   }
 
@@ -138,13 +155,55 @@ export class ArxivTranslationFactory {
   }
 
   /**
-   * 下载翻译后的 PDF
+   * 从 hjfy.top API 获取 arXiv 文件信息
    */
-  static async downloadTranslatedPdf(arxivId: string): Promise<ArrayBuffer> {
-    const url = `https://hjfy.top/arxiv/${arxivId}`;
+  static async fetchArxivFileInfo(arxivId: string): Promise<{
+    id: string;
+    title: string;
+    origin: string;
+    zhCN?: string;
+    zhCNTar?: string;
+    isDeepSeek: boolean;
+  }> {
+    const apiUrl = `https://hjfy.top/api/arxivFiles/${arxivId}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json() as unknown as {
+        status: number;
+        data: {
+          id: string;
+          title: string;
+          origin: string;
+          zhCN?: string;
+          zhCNTar?: string;
+          isDeepSeek: boolean;
+        }
+      };
+
+      if (data.status !== 0) {
+        throw new Error(`API 返回错误状态: ${data.status}`);
+      }
+
+      return data.data;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`获取文件信息失败: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * 下载文件（支持原文或中文翻译）
+   * @param fileUrl 文件 URL
+   * @param useTranslation 是否使用中文翻译（默认 true）
+   */
+  static async downloadPdf(fileUrl: string): Promise<ArrayBuffer> {
+    try {
+      const response = await fetch(fileUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -159,8 +218,7 @@ export class ArxivTranslationFactory {
       let totalLength = 0;
 
       while (true) {
-        const result = await reader.read(new Uint8Array(1024));
-        const { done, value } = result;
+        const { done, value } = await reader.read(new Uint8Array(1024));
         if (done) break;
 
         if (value) {
@@ -196,28 +254,23 @@ export class ArxivTranslationFactory {
     const title = item.getDisplayTitle().replace(/[^\w\s.-]/g, '').substring(0, 50);
     const filename = `${title}_hjfy_arxiv_${arxivId}.pdf`;
 
-    // 创建临时文件路径
-    const tempDir = Zotero.getTempDirectory().path + "/hjfy-arxiv";
-    const tempPath = tempDir + "/" + filename;
+    // 创建临时文件 - 使用 Zotero 的临时目录 API
+    const tempDir = Zotero.getTempDirectory();
+    tempDir.append("hjfy-arxiv");
+    if (!tempDir.exists()) {
+      tempDir.create(1, 0o755);
+    }
+
+    const tempFile = tempDir.clone();
+    tempFile.append(filename);
 
     try {
-      // 确保 tempDir 存在
-      const tempDirFile = ztoolkit.getGlobal("FileUtils").File(tempDir);
-      if (!tempDirFile.exists()) {
-        tempDirFile.create(ztoolkit.getGlobal("Components.interfaces").nsIFile.DIRECTORY_TYPE, 0o755);
-      }
-
-      // 保存 PDF 到临时文件
-      const file = ztoolkit.getGlobal("FileUtils").File(tempPath);
-      const outputStream = ztoolkit.getGlobal("Components.classes")["@mozilla.org/network/file-output-stream;1"]
-        .createInstance(ztoolkit.getGlobal("Components.interfaces").nsIFileOutputStream);
-      outputStream.init(file, 0x02 | 0x08 | 0x20, 0o666, 0);
-      outputStream.write(new Uint8Array(pdfBuffer));
-      outputStream.close();
+      // 将 ArrayBuffer 写入临时文件
+      await this.writeFile(tempFile, pdfBuffer);
 
       // 将文件添加为 Zotero 附件
       const attachment = await Zotero.Attachments.importFromFile({
-        file: file.path,
+        file: tempFile,
         parentItemID: item.id,
       });
 
@@ -229,14 +282,40 @@ export class ArxivTranslationFactory {
     } finally {
       // 清理临时文件
       try {
-        const file = ztoolkit.getGlobal("FileUtils").File(tempPath);
-        if (file.exists()) {
-          file.remove(false);
+        if (tempFile.exists()) {
+          tempFile.remove(false);
         }
       } catch (e) {
         ztoolkit.log("清理临时文件失败", e);
       }
     }
+  }
+
+  /**
+   * 将 ArrayBuffer 写入文件
+   */
+  static async writeFile(file: any, data: ArrayBuffer): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const outputStream = (Components.classes as any)["@mozilla.org/network/file-output-stream;1"]
+        .createInstance(Components.interfaces.nsIFileOutputStream);
+      outputStream.init(file, 0x02 | 0x08 | 0x20, 0o666, 0);
+
+      try {
+        const binaryStream = (Components.classes as any)["@mozilla.org/binaryoutputstream;1"]
+          .createInstance(Components.interfaces.nsIBinaryOutputStream);
+        binaryStream.setOutputStream(outputStream);
+
+        const bytes = new Uint8Array(data);
+        binaryStream.writeByteArray(bytes, bytes.length);
+        binaryStream.close();
+        outputStream.close();
+
+        resolve();
+      } catch (e) {
+        outputStream.close();
+        reject(e);
+      }
+    });
   }
 
   /**

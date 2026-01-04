@@ -1,11 +1,3 @@
 startup-begin = hjfy.top arXiv Plugin is loading
 startup-finish = hjfy.top arXiv Plugin is ready
 menuitem-label = hjfy.top arXiv: Translate Current Article
-menupopup-label = hjfy.top arXiv: Translation Options
-menuitem-submenulabel = hjfy.top arXiv
-menuitem-filemenulabel = hjfy.top arXiv: Batch Translation
-prefs-title = hjfy.top arXiv Settings
-prefs-table-title = Setting Item
-prefs-table-detail = Description
-tabpanel-lib-tab-label = Translation History
-tabpanel-reader-tab-label = Translation Preview

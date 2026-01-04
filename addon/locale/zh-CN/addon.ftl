@@ -1,11 +1,3 @@
 startup-begin = 幻觉翻译 arXiv 翻译插件加载中
 startup-finish = 幻觉翻译 arXiv 翻译插件已就绪
-menuitem-label = 幻觉翻译 arXiv 翻译: 翻译当前文章
-menupopup-label = 幻觉翻译 arXiv 翻译: 翻译选项
-menuitem-submenulabel = 幻觉翻译 arXiv 翻译
-menuitem-filemenulabel = 幻觉翻译 arXiv 翻译: 批量翻译
-prefs-title = 幻觉翻译 arXiv 翻译设置
-prefs-table-title = 设置项
-prefs-table-detail = 说明
-tabpanel-lib-tab-label = 翻译历史
-tabpanel-reader-tab-label = 翻译预览
+menuitem-label = 幻觉翻译 arXiv: 翻译当前文章
