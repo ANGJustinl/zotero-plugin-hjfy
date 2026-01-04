@@ -77,6 +77,7 @@ API: https://hjfy.top/api/arxivFiles/{arxiv_id}
 ```
 
 返回数据包括：
+
 - `origin`: 原文 PDF
 - `zhCN`: 中文翻译 PDF（优先使用）
 - `zhCNTar`: 中文翻译压缩包
@@ -207,6 +208,7 @@ API: https://hjfy.top/api/arxivFiles/{arxiv_id}
 ```
 
 Response includes:
+
 - `origin`: Original PDF
 - `zhCN`: Chinese translation PDF (preferred)
 - `zhCNTar`: Chinese translation archive

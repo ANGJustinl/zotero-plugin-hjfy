@@ -32,7 +32,9 @@ export class ArxivTranslationFactory {
    * 翻译选中的条目
    */
   static async translateSelectedItems(items: Zotero.Item[]) {
-    const progressWindow = new ztoolkit.ProgressWindow(getString("menuitem-label"));
+    const progressWindow = new ztoolkit.ProgressWindow(
+      getString("menuitem-label"),
+    );
     const progressLines: any[] = [];
 
     for (let i = 0; i < items.length; i++) {
@@ -54,7 +56,8 @@ export class ArxivTranslationFactory {
         });
       } catch (error) {
         ztoolkit.log(`翻译失败: ${item.getDisplayTitle()}`, error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         progressWindow.createLine({
           text: `❌ ${item.getDisplayTitle()}: ${errorMessage}`,
           type: "error",
@@ -173,7 +176,7 @@ export class ArxivTranslationFactory {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json() as unknown as {
+      const data = (await response.json()) as unknown as {
         status: number;
         data: {
           id: string;
@@ -182,7 +185,7 @@ export class ArxivTranslationFactory {
           zhCN?: string;
           zhCNTar?: string;
           isDeepSeek: boolean;
-        }
+        };
       };
 
       if (data.status !== 0) {
@@ -191,7 +194,8 @@ export class ArxivTranslationFactory {
 
       return data.data;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`获取文件信息失败: ${errorMessage}`);
     }
   }
@@ -237,7 +241,8 @@ export class ArxivTranslationFactory {
 
       return mergedResult.buffer;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`下载失败: ${errorMessage}`);
     }
   }
@@ -248,10 +253,13 @@ export class ArxivTranslationFactory {
   static async savePdfAsAttachment(
     item: Zotero.Item,
     pdfBuffer: ArrayBuffer,
-    arxivId: string
+    arxivId: string,
   ): Promise<Zotero.Item> {
     // 生成文件名
-    const title = item.getDisplayTitle().replace(/[^\w\s.-]/g, '').substring(0, 50);
+    const title = item
+      .getDisplayTitle()
+      .replace(/[^\w\s.-]/g, "")
+      .substring(0, 50);
     const filename = `${title}_hjfy_arxiv_${arxivId}.pdf`;
 
     // 创建临时文件 - 使用 Zotero 的临时目录 API
@@ -296,13 +304,15 @@ export class ArxivTranslationFactory {
    */
   static async writeFile(file: any, data: ArrayBuffer): Promise<void> {
     return new Promise((resolve, reject) => {
-      const outputStream = (Components.classes as any)["@mozilla.org/network/file-output-stream;1"]
-        .createInstance(Components.interfaces.nsIFileOutputStream);
+      const outputStream = (Components.classes as any)[
+        "@mozilla.org/network/file-output-stream;1"
+      ].createInstance(Components.interfaces.nsIFileOutputStream);
       outputStream.init(file, 0x02 | 0x08 | 0x20, 0o666, 0);
 
       try {
-        const binaryStream = (Components.classes as any)["@mozilla.org/binaryoutputstream;1"]
-          .createInstance(Components.interfaces.nsIBinaryOutputStream);
+        const binaryStream = (Components.classes as any)[
+          "@mozilla.org/binaryoutputstream;1"
+        ].createInstance(Components.interfaces.nsIBinaryOutputStream);
         binaryStream.setOutputStream(outputStream);
 
         const bytes = new Uint8Array(data);
@@ -331,7 +341,9 @@ export class ArxivTranslationFactory {
    */
   static async batchTranslate() {
     const items = ztoolkit.getGlobal("ZoteroPane").getSelectedItems();
-    const arxivItems = items.filter((item: Zotero.Item) => this.hasArxivDOI(item));
+    const arxivItems = items.filter((item: Zotero.Item) =>
+      this.hasArxivDOI(item),
+    );
 
     if (arxivItems.length === 0) {
       new ztoolkit.ProgressWindow(getString("menuitem-label"))
