@@ -1,7 +1,7 @@
 {
   "name": "zotero-plugin-hjfy",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Zotero plugin for translating arXiv articles based on LaTeX source code using hjfy.top Translation",
   "config": {
     "addonName": "幻觉翻译 arXiv 翻译",
