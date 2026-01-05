@@ -158,6 +158,15 @@ export class ArxivTranslationFactory {
   }
 
   /**
+   * 获取请求头（标注来源）
+   */
+  static getRequestHeaders(): HeadersInit {
+    return {
+      "User-Agent": `zotero-plugin-hjfy (Zotero Plugin; +https://github.com/angjustinl/zotero-plugin-hjfy)`
+    };
+  }
+
+  /**
    * 从 hjfy.top API 获取 arXiv 文件信息
    */
   static async fetchArxivFileInfo(arxivId: string): Promise<{
@@ -171,7 +180,9 @@ export class ArxivTranslationFactory {
     const apiUrl = `https://hjfy.top/api/arxivFiles/${arxivId}`;
 
     try {
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        headers: this.getRequestHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -207,7 +218,9 @@ export class ArxivTranslationFactory {
    */
   static async downloadPdf(fileUrl: string): Promise<ArrayBuffer> {
     try {
-      const response = await fetch(fileUrl);
+      const response = await fetch(fileUrl, {
+        headers: this.getRequestHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -283,7 +296,7 @@ export class ArxivTranslationFactory {
       });
 
       // 设置附件标题
-      attachment.setField("title", `中文翻译 - ${item.getDisplayTitle()}`);
+      attachment.setField("title", `幻觉翻译 - ${item.getDisplayTitle()}`);
       await attachment.saveTx();
 
       return attachment;
