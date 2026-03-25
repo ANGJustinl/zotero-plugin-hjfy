@@ -88,6 +88,19 @@ export class ArxivTranslationFactory {
       throw new Error("无法从 DOI 中提取 arXiv ID");
     }
 
+    const expectedAttachmentFilename = this.getTranslationAttachmentFilename(
+      item,
+      arxivId,
+    );
+    const existingAttachment = this.findExistingTranslationAttachment(
+      item,
+      expectedAttachmentFilename,
+    );
+    if (existingAttachment) {
+      ztoolkit.log("翻译附件已存在，跳过下载", expectedAttachmentFilename);
+      return existingAttachment;
+    }
+
     // 3. 获取文件信息并下载翻译后的 PDF
     ztoolkit.log("正在获取文件信息...");
     const fileInfo = await this.fetchArxivFileInfo(arxivId);
@@ -268,12 +281,7 @@ export class ArxivTranslationFactory {
     pdfBuffer: ArrayBuffer,
     arxivId: string,
   ): Promise<Zotero.Item> {
-    // 生成文件名
-    const title = item
-      .getDisplayTitle()
-      .replace(/[^\w\s.-]/g, "")
-      .substring(0, 50);
-    const filename = `${title}_hjfy_arxiv_${arxivId}.pdf`;
+    const filename = this.getTranslationAttachmentFilename(item, arxivId);
 
     // 创建临时文件 - 使用 Zotero 的临时目录 API
     const tempDir = Zotero.getTempDirectory();
@@ -310,6 +318,49 @@ export class ArxivTranslationFactory {
         ztoolkit.log("清理临时文件失败", e);
       }
     }
+  }
+
+  /**
+   * 获取翻译附件的文件名
+   */
+  static getTranslationAttachmentFilename(
+    item: Zotero.Item,
+    arxivId: string,
+  ): string {
+    const title = item
+      .getDisplayTitle()
+      .replace(/[^\w\s.-]/g, "")
+      .substring(0, 50);
+    return `${title}_hjfy_arxiv_${arxivId}.pdf`;
+  }
+
+  /**
+   * 查找已存在的翻译附件
+   */
+  static findExistingTranslationAttachment(
+    item: Zotero.Item,
+    filename: string,
+  ): Zotero.Item | null {
+    const attachmentIDs = item.getAttachments();
+
+    for (const attachmentID of attachmentIDs) {
+      const attachment = Zotero.Items.get(attachmentID) as Zotero.Item | null;
+      if (!attachment) {
+        continue;
+      }
+
+      const existingFilename = attachment.getFilename();
+      const fileExists =
+        typeof (attachment as any).fileExists === "function"
+          ? (attachment as any).fileExists()
+          : false;
+
+      if (existingFilename === filename && fileExists) {
+        return attachment;
+      }
+    }
+
+    return null;
   }
 
   /**
