@@ -74,18 +74,11 @@ export class ArxivTranslationFactory {
    * 翻译单个条目
    */
   static async translateSingleItem(item: Zotero.Item, _progressLine: any) {
-    // 1. 读取 DOI
-    ztoolkit.log("正在读取 DOI...");
-    const doi = this.extractDOI(item);
-    if (!doi) {
-      throw new Error("未找到有效的 DOI");
-    }
-
-    // 2. 提取 arXiv ID
+    // 1. 尝试提取 arXiv ID（从多个来源）
     ztoolkit.log("正在解析 arXiv ID...");
-    const arxivId = this.extractArxivId(doi);
+    const arxivId = this.extractArxivIdFromItem(item);
     if (!arxivId) {
-      throw new Error("无法从 DOI 中提取 arXiv ID");
+      throw new Error("未找到有效的 arXiv ID（需要 DOI、arXiv URL 或存档 ID）");
     }
 
     const expectedAttachmentFilename = this.getTranslationAttachmentFilename(
@@ -120,6 +113,100 @@ export class ArxivTranslationFactory {
 
     ztoolkit.log("翻译完成!");
     return attachment;
+  }
+
+  /**
+   * 从条目中提取 arXiv ID（从多个来源）
+   * 优先级: DOI > URL 字段 > 存档 ID 字段
+   */
+  static extractArxivIdFromItem(item: Zotero.Item): string | null {
+    // 1. 首先尝试从 DOI 提取
+    const doi = this.extractDOI(item);
+    if (doi) {
+      const arxivId = this.extractArxivId(doi);
+      if (arxivId) {
+        ztoolkit.log(`从 DOI 提取到 arXiv ID: ${arxivId}`);
+        return arxivId;
+      }
+    }
+
+    // 2. 尝试从 URL 字段提取
+    const url = item.getField("url") as string;
+    if (url) {
+      const arxivId = this.extractArxivIdFromUrl(url);
+      if (arxivId) {
+        ztoolkit.log(`从 URL 提取到 arXiv ID: ${arxivId}`);
+        return arxivId;
+      }
+    }
+
+    // 3. 尝试从存档 ID (archiveID / archiveLocation) 字段提取
+    const archiveId = item.getField("archiveID") as string;
+    if (archiveId) {
+      const arxivId = this.extractArxivIdFromArchiveId(archiveId);
+      if (arxivId) {
+        ztoolkit.log(`从存档 ID 提取到 arXiv ID: ${arxivId}`);
+        return arxivId;
+      }
+    }
+
+    // 4. 尝试从 extra 字段提取
+    const extra = item.getField("extra") as string;
+    if (extra) {
+      const arxivId = this.extractArxivIdFromExtra(extra);
+      if (arxivId) {
+        ztoolkit.log(`从 extra 字段提取到 arXiv ID: ${arxivId}`);
+        return arxivId;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 从 URL 中提取 arXiv ID
+   * 支持格式: http://arxiv.org/abs/2511.02230, https://arxiv.org/pdf/2511.02230.pdf 等
+   */
+  static extractArxivIdFromUrl(url: string): string | null {
+    // 匹配 arxiv.org/abs/ 或 arxiv.org/pdf/ 后的 ID
+    const arxivOrgMatch = url.match(/arxiv\.org\/(?:abs|pdf)\/(\d+\.\d+)/i);
+    if (arxivOrgMatch) {
+      return arxivOrgMatch[1];
+    }
+
+    return null;
+  }
+
+  /**
+   * 从存档 ID 字段中提取 arXiv ID
+   * 支持格式: arXiv:2511.02230, arxiv:2511.02230
+   */
+  static extractArxivIdFromArchiveId(archiveId: string): string | null {
+    // 匹配 arXiv: 或 arxiv: 后的 ID
+    const match = archiveId.match(/arxiv[:\s](\d+\.\d+)/i);
+    if (match) {
+      return match[1];
+    }
+
+    return null;
+  }
+
+  /**
+   * 从 extra 字段中提取 arXiv ID
+   * 支持格式: arXiv ID: 2511.02230, arxiv: 2511.02230 等
+   */
+  static extractArxivIdFromExtra(extra: string): string | null {
+    // 匹配各种可能的 arXiv ID 格式
+    const patterns = [/arxiv\s+id[:\s]+(\d+\.\d+)/i, /arxiv[:\s]+(\d+\.\d+)/i];
+
+    for (const pattern of patterns) {
+      const match = extra.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -393,11 +480,10 @@ export class ArxivTranslationFactory {
   }
 
   /**
-   * 检查条目是否包含 arXiv DOI
+   * 检查条目是否包含 arXiv ID（从任何来源）
    */
   static hasArxivDOI(item: Zotero.Item): boolean {
-    const doi = this.extractDOI(item);
-    return doi ? this.extractArxivId(doi) !== null : false;
+    return this.extractArxivIdFromItem(item) !== null;
   }
 
   /**
