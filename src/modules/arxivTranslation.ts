@@ -262,7 +262,8 @@ export class ArxivTranslationFactory {
    */
   static getRequestHeaders(): HeadersInit {
     return {
-      "User-Agent": "zotero-plugin-hjfy (Zotero Plugin; +https://github.com/angjustinl/zotero-plugin-hjfy)",
+      "User-Agent":
+        "zotero-plugin-hjfy (Zotero Plugin; +https://github.com/angjustinl/zotero-plugin-hjfy)",
     };
   }
 
