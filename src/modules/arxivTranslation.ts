@@ -422,6 +422,21 @@ export class ArxivTranslationFactory {
   }
 
   /**
+   * 获取附件文件名（兼容 Zotero 7/8/9）
+   */
+  static getAttachmentFilename(attachment: Zotero.Item): string | null {
+    // Zotero 9.0+: 使用 attachmentFilename 属性
+    if ("attachmentFilename" in attachment) {
+      return (attachment as any).attachmentFilename || null;
+    }
+    // Zotero 7/8: 使用 getFilename() 方法
+    if (typeof (attachment as any).getFilename === "function") {
+      return (attachment as any).getFilename() || null;
+    }
+    return null;
+  }
+
+  /**
    * 查找已存在的翻译附件
    */
   static findExistingTranslationAttachment(
@@ -436,7 +451,7 @@ export class ArxivTranslationFactory {
         continue;
       }
 
-      const existingFilename = attachment.getFilename();
+      const existingFilename = this.getAttachmentFilename(attachment);
       const fileExists =
         typeof (attachment as any).fileExists === "function"
           ? (attachment as any).fileExists()
