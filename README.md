@@ -1,6 +1,7 @@
 # 幻觉翻译 arXiv 翻译插件 | hjfy.top arXiv Translation for Zotero
 
-[![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![zotero target version](https://img.shields.io/badge/Zotero-7~9-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![Latest Release](https://img.shields.io/github/v/release/20bytes/zotero-plugin-hjfy?style=flat-square)](https://github.com/20bytes/zotero-plugin-hjfy/releases/latest)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
 [![License](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 
@@ -33,7 +34,7 @@ A Zotero plugin that downloads Chinese translations of arXiv papers based on LaT
 
 #### 方法 1：从 XPI 文件安装（推荐）
 
-1. 在 [Releases](https://github.com/angjustinl/zotero-plugin-hjfy/releases) 页面下载最新的 `.xpi` 文件
+1. 在 [Releases](https://github.com/20bytes/zotero-plugin-hjfy/releases) 页面下载最新的 `.xpi` 文件
 2. 在 Zotero 中：**工具 → 插件 → 安装插件** → 选择下载的 XPI 文件
 3. 重启 Zotero
 
@@ -41,7 +42,7 @@ A Zotero plugin that downloads Chinese translations of arXiv papers based on LaT
 
 ```bash
 # 克隆仓库
-git clone https://github.com/angjustinl/zotero-plugin-hjfy.git
+git clone https://github.com/20bytes/zotero-plugin-hjfy.git
 cd zotero-plugin-hjfy
 
 # 安装依赖
@@ -90,7 +91,7 @@ API: https://hjfy.top/api/arxivFiles/{arxiv_id}
 
 #### 环境要求
 
-- **Zotero 7+**（Beta 版本）
+- **Zotero 7~9**
 - **Node.js**（最新 LTS 版本）
 - **Git**
 
@@ -170,7 +171,7 @@ npm run release
 
 #### Method 1: Install from XPI (Recommended)
 
-1. Download the latest `.xpi` from [Releases](https://github.com/angjustinl/zotero-plugin-hjfy/releases)
+1. Download the latest `.xpi` from [Releases](https://github.com/20bytes/zotero-plugin-hjfy/releases)
 2. In Zotero: **Tools → Plugins → Install Plugin** → Select the XPI file
 3. Restart Zotero
 
@@ -178,7 +179,7 @@ npm run release
 
 ```bash
 # Clone repository
-git clone https://github.com/angjustinl/zotero-plugin-hjfy.git
+git clone https://github.com/20bytes/zotero-plugin-hjfy.git
 cd zotero-plugin-hjfy
 
 # Install dependencies
@@ -217,7 +218,7 @@ Response includes:
 
 #### Requirements
 
-- **Zotero 7+** (Beta build)
+- **Zotero 7~9**
 - **Node.js** (Latest LTS)
 - **Git**
 
