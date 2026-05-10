@@ -6,27 +6,38 @@ export class ArxivTranslationFactory {
    */
   static registerRightClickMenuItem() {
     const menuIcon = `chrome://${addon.data.config.addonRef}/content/icons/favicon@0.5x.png`;
-    ztoolkit.Menu.register("item", {
-      tag: "menuitem",
-      id: "zotero-itemmenu-hjfy-arxiv-translate",
-      label: getString("menuitem-label"),
-      commandListener: () => {
-        const items = ztoolkit.getGlobal("ZoteroPane").getSelectedItems();
-        if (items.length > 0) {
-          this.translateSelectedItems(items);
-        } else {
-          new ztoolkit.ProgressWindow(getString("menuitem-label"))
-            .createLine({
-              text: "未选择任何条目",
-              type: "warning",
-            })
-            .show()
-            .startCloseTimer(3000);
-        }
-      },
-      icon: menuIcon,
+
+    // Use Zotero 8+ MenuManager API
+    // @ts-expect-error - MenuManager is not yet in zotero-types
+    this._menuRegisteredID = Zotero.MenuManager.registerMenu({
+      menuID: "hjfy-arxiv-translate",
+      pluginID: addon.data.config.addonID,
+      target: "main/library/item",
+      menus: [
+        {
+          menuType: "menuitem",
+          l10nID: `${addon.data.config.addonRef}-menuitem-translate`,
+          icon: menuIcon,
+          onCommand: (_event: any, context: any) => {
+            const items = context.items || ztoolkit.getGlobal("ZoteroPane").getSelectedItems();
+            if (items.length > 0) {
+              this.translateSelectedItems(items);
+            } else {
+              new ztoolkit.ProgressWindow(getString("menuitem-label"))
+                .createLine({
+                  text: "未选择任何条目",
+                  type: "warning",
+                })
+                .show()
+                .startCloseTimer(3000);
+            }
+          },
+        },
+      ],
     });
   }
+
+  static _menuRegisteredID: string | undefined;
 
   /**
    * 翻译选中的条目
@@ -349,7 +360,7 @@ export class ArxivTranslationFactory {
         continue;
       }
 
-      const existingFilename = attachment.getFilename();
+      const existingFilename = attachment.attachmentFilename;
       const fileExists =
         typeof (attachment as any).fileExists === "function"
           ? (attachment as any).fileExists()
