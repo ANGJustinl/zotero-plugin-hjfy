@@ -8,6 +8,8 @@
 
 A Zotero plugin that downloads Chinese translations of arXiv papers based on LaTeX source code from [幻觉翻译 hjfy.top](https://hjfy.top).
 
+友情链接: 更新更好的相关项目 https://github.com/Infinity4B/zotero-hjfy-split-reader
+
 [English](#english) | [简体中文](#简体中文)
 
 ---
