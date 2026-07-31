@@ -74,19 +74,31 @@ export class ArxivTranslationFactory {
    * 翻译单个条目
    */
   static async translateSingleItem(item: Zotero.Item, _progressLine: any) {
+    // 如果是附件，获取父条目
+    let targetItem = item;
+    if (this.isAttachmentItem(item)) {
+      const parentItem = this.getParentItem(item);
+      if (parentItem) {
+        ztoolkit.log("检测到附件项，使用父条目进行翻译");
+        targetItem = parentItem;
+      } else {
+        throw new Error("无法找到附件的父条目");
+      }
+    }
+
     // 1. 尝试提取 arXiv ID（从多个来源）
     ztoolkit.log("正在解析 arXiv ID...");
-    const arxivId = this.extractArxivIdFromItem(item);
+    const arxivId = this.extractArxivIdFromItem(targetItem);
     if (!arxivId) {
       throw new Error("未找到有效的 arXiv ID（需要 DOI、arXiv URL 或存档 ID）");
     }
 
     const expectedAttachmentFilename = this.getTranslationAttachmentFilename(
-      item,
+      targetItem,
       arxivId,
     );
     const existingAttachment = this.findExistingTranslationAttachment(
-      item,
+      targetItem,
       expectedAttachmentFilename,
     );
     if (existingAttachment) {
@@ -109,7 +121,11 @@ export class ArxivTranslationFactory {
 
     // 4. 保存 PDF 并添加附件
     ztoolkit.log("正在添加附件...");
-    const attachment = await this.savePdfAsAttachment(item, pdfBuffer, arxivId);
+    const attachment = await this.savePdfAsAttachment(
+      targetItem,
+      pdfBuffer,
+      arxivId,
+    );
 
     ztoolkit.log("翻译完成!");
     return attachment;
@@ -120,8 +136,18 @@ export class ArxivTranslationFactory {
    * 优先级: DOI > URL 字段 > 存档 ID 字段
    */
   static extractArxivIdFromItem(item: Zotero.Item): string | null {
+    // 如果是附件，获取父条目
+    let targetItem = item;
+    if (this.isAttachmentItem(item)) {
+      const parentItem = this.getParentItem(item);
+      if (parentItem) {
+        ztoolkit.log("检测到附件项，使用父条目");
+        targetItem = parentItem;
+      }
+    }
+
     // 1. 首先尝试从 DOI 提取
-    const doi = this.extractDOI(item);
+    const doi = this.extractDOI(targetItem);
     if (doi) {
       const arxivId = this.extractArxivId(doi);
       if (arxivId) {
@@ -131,7 +157,7 @@ export class ArxivTranslationFactory {
     }
 
     // 2. 尝试从 URL 字段提取
-    const url = item.getField("url") as string;
+    const url = targetItem.getField("url") as string;
     if (url) {
       const arxivId = this.extractArxivIdFromUrl(url);
       if (arxivId) {
@@ -141,7 +167,7 @@ export class ArxivTranslationFactory {
     }
 
     // 3. 尝试从存档 ID (archiveID / archiveLocation) 字段提取
-    const archiveId = item.getField("archiveID") as string;
+    const archiveId = targetItem.getField("archiveID") as string;
     if (archiveId) {
       const arxivId = this.extractArxivIdFromArchiveId(archiveId);
       if (arxivId) {
@@ -151,7 +177,7 @@ export class ArxivTranslationFactory {
     }
 
     // 4. 尝试从 extra 字段提取
-    const extra = item.getField("extra") as string;
+    const extra = targetItem.getField("extra") as string;
     if (extra) {
       const arxivId = this.extractArxivIdFromExtra(extra);
       if (arxivId) {
@@ -161,6 +187,23 @@ export class ArxivTranslationFactory {
     }
 
     return null;
+  }
+
+  /**
+   * 检查条目是否为附件
+   */
+  static isAttachmentItem(item: Zotero.Item): boolean {
+    return item.isAttachment();
+  }
+
+  /**
+   * 获取附件的父条目
+   */
+  static getParentItem(item: Zotero.Item): Zotero.Item | null {
+    if (!item.parentID) {
+      return null;
+    }
+    return Zotero.Items.get(item.parentID) || null;
   }
 
   /**
